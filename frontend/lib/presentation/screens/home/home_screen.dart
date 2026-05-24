@@ -9,6 +9,7 @@ import '../../widgets/search_bar_widget.dart';
 import '../note/note_edit_screen.dart';
 import '../label/label_screen.dart';
 import '../auth/login_screen.dart';
+import '../../../data/providers/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -96,6 +97,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: 'labels',
                       child: Text('Edit labels'),
                     ),
+                    PopupMenuItem(
+                      value: 'theme',
+                      child: Row(
+                        children: [
+                          Icon(
+                            context.read<ThemeProvider>().isDark
+                                ? Icons.light_mode
+                                : Icons.dark_mode,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.read<ThemeProvider>().isDark
+                                ? 'Light mode'
+                                : 'Dark mode',
+                          ),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(value: 'logout', child: Text('Logout')),
                   ],
                   onSelected: (value) {
@@ -104,6 +124,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         context,
                         MaterialPageRoute(builder: (_) => const LabelScreen()),
                       );
+                    } else if (value == 'theme') {
+                      context.read<ThemeProvider>().toggleTheme();
                     } else if (value == 'logout') {
                       _logout();
                     }
