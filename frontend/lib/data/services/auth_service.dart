@@ -10,18 +10,23 @@ class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
-  Future<Map<String, dynamic>> register(String name, String email, String password) async {
-    return await _api.post(
-      '${ApiConstants.auth}/register',
-      {'name': name, 'email': email, 'password': password},
-    );
+  Future<Map<String, dynamic>> register(
+    String name,
+    String email,
+    String password,
+  ) async {
+    return await _api.post('${ApiConstants.auth}/register', {
+      'name': name,
+      'email': email,
+      'password': password,
+    });
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    return await _api.post(
-      '${ApiConstants.auth}/login',
-      {'email': email, 'password': password},
-    );
+    return await _api.post('${ApiConstants.auth}/login', {
+      'email': email,
+      'password': password,
+    });
   }
 
   Future<Map<String, dynamic>> googleSignIn() async {
@@ -35,11 +40,17 @@ class AuthService {
 
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     await _storage.write(key: AppConstants.tokenKey, value: accessToken);
-    await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
+    await _storage.write(
+      key: AppConstants.refreshTokenKey,
+      value: refreshToken,
+    );
   }
 
   Future<void> saveUser(UserModel user) async {
-    await _storage.write(key: AppConstants.userKey, value: user.toJson().toString());
+    await _storage.write(
+      key: AppConstants.userKey,
+      value: user.toJson().toString(),
+    );
   }
 
   Future<String?> getToken() async {
@@ -47,8 +58,13 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _storage.deleteAll();
-    await _googleSignIn.signOut();
+    try {
+      await _storage.deleteAll();
+    } catch (e) {
+      await _storage.delete(key: AppConstants.tokenKey);
+      await _storage.delete(key: AppConstants.refreshTokenKey);
+      await _storage.delete(key: AppConstants.userKey);
+    }
   }
 
   Future<bool> isLoggedIn() async {

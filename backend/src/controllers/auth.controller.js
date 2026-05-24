@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const register = async (req, res, next) => {
+const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const existing = await User.findOne({ email });
@@ -25,11 +25,12 @@ const register = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
     });
   } catch (error) {
-    next(error);
+    console.error('Register error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const login = async (req, res, next) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -51,11 +52,12 @@ const login = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
     });
   } catch (error) {
-    next(error);
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const googleAuth = async (req, res, next) => {
+const googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
     const ticket = await client.verifyIdToken({
@@ -83,11 +85,12 @@ const googleAuth = async (req, res, next) => {
       user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
     });
   } catch (error) {
-    next(error);
+    console.error('Google auth error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const refreshToken = async (req, res, next) => {
+const refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -101,18 +104,20 @@ const refreshToken = async (req, res, next) => {
     const accessToken = generateAccessToken(user._id);
     res.status(200).json({ success: true, accessToken });
   } catch (error) {
-    next(error);
+    console.error('Refresh token error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-const logout = async (req, res, next) => {
+const logout = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     user.refreshToken = null;
     await user.save();
     res.status(200).json({ success: true, message: 'Logged out' });
   } catch (error) {
-    next(error);
+    console.error('Logout error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

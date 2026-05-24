@@ -27,7 +27,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _authService.register(name, email, password);
       if (response['success'] == true) {
-        await _authService.saveTokens(response['accessToken'], response['refreshToken']);
+        await _authService.saveTokens(
+          response['accessToken'],
+          response['refreshToken'],
+        );
         _user = UserModel.fromJson(response['user']);
         _isLoggedIn = true;
         _isLoading = false;
@@ -53,7 +56,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _authService.login(email, password);
       if (response['success'] == true) {
-        await _authService.saveTokens(response['accessToken'], response['refreshToken']);
+        await _authService.saveTokens(
+          response['accessToken'],
+          response['refreshToken'],
+        );
         _user = UserModel.fromJson(response['user']);
         _isLoggedIn = true;
         _isLoading = false;
@@ -79,7 +85,10 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await _authService.googleSignIn();
       if (response['success'] == true) {
-        await _authService.saveTokens(response['accessToken'], response['refreshToken']);
+        await _authService.saveTokens(
+          response['accessToken'],
+          response['refreshToken'],
+        );
         _user = UserModel.fromJson(response['user']);
         _isLoggedIn = true;
         _isLoading = false;
