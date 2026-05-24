@@ -8,13 +8,12 @@ import 'api_service.dart';
 class AuthService {
   final ApiService _api = ApiService();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    clientId: '629844082500-4hf45oq7gdi3put6e4572rquaa62l7s2.apps.googleusercontent.com',
+  );
 
-  Future<Map<String, dynamic>> register(
-    String name,
-    String email,
-    String password,
-  ) async {
+  Future<Map<String, dynamic>> register(String name, String email, String password) async {
     return await _api.post('${ApiConstants.auth}/register', {
       'name': name,
       'email': email,
@@ -33,24 +32,18 @@ class AuthService {
     final account = await _googleSignIn.signIn();
     if (account == null) throw Exception('Google sign in cancelled');
     final auth = await account.authentication;
-    final idToken = auth.idToken;
+    final idToken = auth.idToken ?? auth.accessToken;
     if (idToken == null) throw Exception('Failed to get ID token');
     return await _api.post('${ApiConstants.auth}/google', {'idToken': idToken});
   }
 
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     await _storage.write(key: AppConstants.tokenKey, value: accessToken);
-    await _storage.write(
-      key: AppConstants.refreshTokenKey,
-      value: refreshToken,
-    );
+    await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
   }
 
   Future<void> saveUser(UserModel user) async {
-    await _storage.write(
-      key: AppConstants.userKey,
-      value: user.toJson().toString(),
-    );
+    await _storage.write(key: AppConstants.userKey, value: user.toJson().toString());
   }
 
   Future<String?> getToken() async {

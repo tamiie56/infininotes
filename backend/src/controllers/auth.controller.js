@@ -60,11 +60,19 @@ const login = async (req, res) => {
 const googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
+    let payload;
+    if (idToken.startsWith('ya29.')) {
+      const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      payload = await response.json();
+    } else {
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    }
     const { sub: googleId, email, name, picture } = payload;
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
     if (!user) {
