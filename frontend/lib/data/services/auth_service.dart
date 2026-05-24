@@ -8,7 +8,7 @@ import 'api_service.dart';
 class AuthService {
   final ApiService _api = ApiService();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
   Future<Map<String, dynamic>> register(String name, String email, String password) async {
     return await _api.post(
