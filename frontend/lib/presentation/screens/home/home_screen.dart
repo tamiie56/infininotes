@@ -35,10 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refresh() async {
     await context.read<NoteProvider>().fetchNotes(
-      label: _selectedLabel,
-      archived: _selectedIndex == 1,
-      trashed: _selectedIndex == 2,
-    );
+          label: _selectedLabel,
+          archived: _selectedIndex == 1,
+          trashed: _selectedIndex == 2,
+        );
   }
 
   void _openNote([NoteModel? note]) {
@@ -61,6 +61,15 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             ListTile(
               leading: const Icon(Icons.restore),
               title: const Text('Restore'),
@@ -71,14 +80,17 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              leading:
+                  const Icon(Icons.delete_forever, color: Colors.red),
               title: const Text(
                 'Delete permanently',
                 style: TextStyle(color: Colors.red),
               ),
               onTap: () async {
                 Navigator.pop(context);
-                await context.read<NoteProvider>().permanentDeleteNote(note.id);
+                await context
+                    .read<NoteProvider>()
+                    .permanentDeleteNote(note.id);
                 await _refresh();
               },
             ),
@@ -107,7 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_selectedIndex == 2) return 'Trash';
     if (_selectedLabel != null) {
       final labelProvider = context.read<LabelProvider>();
-      final match = labelProvider.labels.where((l) => l.id == _selectedLabel);
+      final match =
+          labelProvider.labels.where((l) => l.id == _selectedLabel);
       if (match.isNotEmpty) return match.first.name;
     }
     return '';
@@ -143,8 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () => setState(() => _isSearching = true),
                 ),
                 IconButton(
-                  icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
-                  onPressed: () => setState(() => _isGridView = !_isGridView),
+                  icon: Icon(
+                      _isGridView ? Icons.view_list : Icons.grid_view),
+                  onPressed: () =>
+                      setState(() => _isGridView = !_isGridView),
                 ),
                 PopupMenuButton(
                   itemBuilder: (_) => [
@@ -163,19 +178,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             size: 18,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            themeProvider.isDark ? 'Light mode' : 'Dark mode',
-                          ),
+                          Text(themeProvider.isDark
+                              ? 'Light mode'
+                              : 'Dark mode'),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(value: 'logout', child: Text('Logout')),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Text('Logout'),
+                    ),
                   ],
                   onSelected: (value) {
                     if (value == 'labels') {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const LabelScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const LabelScreen()),
                       );
                     } else if (value == 'theme') {
                       context.read<ThemeProvider>().toggleTheme();
@@ -243,27 +262,28 @@ class _HomeScreenState extends State<HomeScreen> {
             if (labelProvider.labels.isNotEmpty) ...[
               const Divider(),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
                   'Labels',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
-              ...labelProvider.labels.map(
-                (label) => _DrawerItem(
-                  icon: Icons.label_outlined,
-                  label: label.name,
-                  selected: _selectedLabel == label.id,
-                  onTap: () {
-                    setState(() {
-                      _selectedIndex = 0;
-                      _selectedLabel = label.id;
-                    });
-                    context.read<NoteProvider>().fetchNotes(label: label.id);
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
+              ...labelProvider.labels.map((label) => _DrawerItem(
+                    icon: Icons.label_outlined,
+                    label: label.name,
+                    selected: _selectedLabel == label.id,
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = 0;
+                        _selectedLabel = label.id;
+                      });
+                      context
+                          .read<NoteProvider>()
+                          .fetchNotes(label: label.id);
+                      Navigator.pop(context);
+                    },
+                  )),
             ],
           ],
         ),
@@ -274,7 +294,8 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_currentSectionTitle.isNotEmpty)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 8),
               color: const Color(0xFF1A73E8).withValues(alpha: 0.1),
               child: Text(
                 _currentSectionTitle,
@@ -291,33 +312,33 @@ class _HomeScreenState extends State<HomeScreen> {
               child: noteProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : noteProvider.notes.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _selectedIndex == 2
-                                ? Icons.delete_outlined
-                                : Icons.lightbulb_outlined,
-                            size: 80,
-                            color: Colors.grey,
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _selectedIndex == 2
+                                    ? Icons.delete_outlined
+                                    : Icons.lightbulb_outlined,
+                                size: 80,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _selectedIndex == 2
+                                    ? 'Trash is empty'
+                                    : _selectedIndex == 1
+                                        ? 'No archived notes'
+                                        : 'No notes yet',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _selectedIndex == 2
-                                ? 'Trash is empty'
-                                : _selectedIndex == 1
-                                ? 'No archived notes'
-                                : 'No notes yet',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _buildNotesList(noteProvider),
+                        )
+                      : _buildNotesList(noteProvider),
             ),
           ),
         ],
@@ -360,10 +381,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   (_, i) => NoteCard(
                     note: pinned[i],
                     onTap: () => _openNoteOrShowOptions(pinned[i]),
+                    onRefresh: _refresh,
                   ),
                   childCount: pinned.length,
                 ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 4,
                   mainAxisSpacing: 4,
@@ -392,10 +415,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 (_, i) => NoteCard(
                   note: others[i],
                   onTap: () => _openNoteOrShowOptions(others[i]),
+                  onRefresh: _refresh,
                 ),
                 childCount: others.length,
               ),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 4,
                 mainAxisSpacing: 4,
@@ -421,13 +446,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          ...pinned.map(
-            (n) => NoteCard(
-              note: n,
-              onTap: () => _openNoteOrShowOptions(n),
-              isListView: true,
-            ),
-          ),
+          ...pinned.map((n) => NoteCard(
+                note: n,
+                onTap: () => _openNoteOrShowOptions(n),
+                isListView: true,
+                onRefresh: _refresh,
+              )),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Text(
@@ -440,13 +464,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-        ...others.map(
-          (n) => NoteCard(
-            note: n,
-            onTap: () => _openNoteOrShowOptions(n),
-            isListView: true,
-          ),
-        ),
+        ...others.map((n) => NoteCard(
+              note: n,
+              onTap: () => _openNoteOrShowOptions(n),
+              isListView: true,
+              onRefresh: _refresh,
+            )),
       ],
     );
   }
@@ -471,9 +494,12 @@ class _DrawerItem extends StatelessWidget {
       leading: Icon(icon),
       title: Text(label),
       selected: selected,
-      selectedTileColor: const Color(0xFF1A73E8).withValues(alpha: 0.15),
+      selectedTileColor:
+          const Color(0xFF1A73E8).withValues(alpha: 0.15),
       selectedColor: const Color(0xFF1A73E8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
       onTap: onTap,
     );
   }
