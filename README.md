@@ -13,30 +13,30 @@ Get the latest release from [Releases](https://github.com/tamiie56/infininotes/r
 ```
 infininotes/
 ├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   │   ├── db.js
-│   │   │   └── jwt.js
-│   │   ├── controllers/
-│   │   │   ├── auth.controller.js
-│   │   │   ├── note.controller.js
-│   │   │   └── label.controller.js
-│   │   ├── middleware/
-│   │   │   ├── auth.middleware.js
-│   │   │   └── validate.middleware.js
-│   │   ├── models/
-│   │   │   ├── user.model.js
-│   │   │   ├── note.model.js
-│   │   │   └── label.model.js
-│   │   ├── routes/
-│   │   │   ├── auth.routes.js
-│   │   │   ├── note.routes.js
-│   │   │   └── label.routes.js
-│   │   └── utils/
-│   │       ├── token.utils.js
-│   │       └── reminder.utils.js
-│   ├── app.js
-│   └── server.js
+│   └── src/
+│       ├── config/
+│       │   ├── db.js
+│       │   └── jwt.js
+│       ├── controllers/
+│       │   ├── auth.controller.js
+│       │   ├── note.controller.js
+│       │   └── label.controller.js
+│       ├── middleware/
+│       │   ├── auth.middleware.js
+│       │   └── validate.middleware.js
+│       ├── models/
+│       │   ├── user.model.js
+│       │   ├── note.model.js
+│       │   └── label.model.js
+│       ├── routes/
+│       │   ├── auth.routes.js
+│       │   ├── note.routes.js
+│       │   └── label.routes.js
+│       ├── utils/
+│       │   ├── token.utils.js
+│       │   └── reminder.utils.js
+│       ├── app.js
+│       └── server.js
 └── frontend/
     └── lib/
         ├── core/
@@ -71,8 +71,11 @@ infininotes/
             │   │   └── home_screen.dart
             │   ├── note/
             │   │   └── note_edit_screen.dart
-            │   └── label/
-            │       └── label_screen.dart
+            │   ├── profile/
+            │   │   └── profile_screen.dart
+            │   ├── label/
+            │   │   └── label_screen.dart
+            │   └── splash_screen.dart
             └── widgets/
                 ├── note_card.dart
                 └── search_bar_widget.dart
@@ -84,21 +87,24 @@ infininotes/
 
 | Feature | Status |
 | --- | --- |
-| Email / Password Authentication | Done |
-| Google Sign-In | Done |
-| Create, Edit, Delete Notes | Done |
-| Color Coding for Notes | Done |
-| Pin Notes | Done |
-| Archive Notes | Done |
-| Trash with Restore | Done |
-| Labels / Tags | Done |
-| Search Notes | Done |
-| Checklist Support | Done |
-| Reminders | Done |
-| Dark / Light Mode Toggle | Done |
-| Grid / List View Toggle | Done |
-| Custom App Icon | Done |
-| Android APK Build | Done |
+| Email / Password Authentication | ✅ Done |
+| Google Sign-In | ✅ Done |
+| Create, Edit, Delete Notes | ✅ Done |
+| Color Coding for Notes | ✅ Done |
+| Pin Notes | ✅ Done |
+| Archive Notes | ✅ Done |
+| Trash with Restore & Permanent Delete | ✅ Done |
+| Labels / Tags | ✅ Done |
+| Search Notes | ✅ Done |
+| Checklist Support | ✅ Done |
+| Reminders | ✅ Done |
+| Dark / Light Mode Toggle | ✅ Done |
+| Theme Persistence | ✅ Done |
+| Grid / List View Toggle | ✅ Done |
+| Splash Screen with Animation | ✅ Done |
+| Profile Screen with Stats | ✅ Done |
+| Custom App Icon | ✅ Done |
+| Android APK Build | ✅ Done |
 
 ---
 
@@ -214,10 +220,12 @@ APK will be at `build/app/outputs/flutter-apk/app-release.apk`
 | GET | /api/notes | Get all notes |
 | POST | /api/notes | Create note |
 | PUT | /api/notes/:id | Update note |
-| DELETE | /api/notes/:id | Delete note |
+| DELETE | /api/notes/:id | Trash note |
+| DELETE | /api/notes/:id/permanent | Permanently delete note |
 | PATCH | /api/notes/:id/pin | Toggle pin |
 | PATCH | /api/notes/:id/archive | Toggle archive |
 | PATCH | /api/notes/:id/trash | Toggle trash |
+| PATCH | /api/notes/:id/restore | Restore from trash |
 | GET | /api/labels | Get all labels |
 | POST | /api/labels | Create label |
 | PUT | /api/labels/:id | Update label |
@@ -236,13 +244,24 @@ APK will be at `build/app/outputs/flutter-apk/app-release.apk`
 | `flutter_local_notifications` | Reminder notifications |
 | `flutter_colorpicker` | Note color picker |
 | `flutter_launcher_icons` | Custom app icon |
-| `shared_preferences` | Local storage |
+| `shared_preferences` | Theme persistence |
 | `intl` | Date formatting |
 | `uuid` | Unique ID generation |
 
 ---
 
 ## Changelog
+
+### v2.0.0
+- Full UI redesign — Login, Register, Home Screen, Drawer
+- Note Card v2 — shadow, typography, checklist progress, reminder chip, long press context menu
+- Profile Screen — avatar (initials), stats (Notes / Archived / Trash), dark mode toggle, logout
+- Splash screen with animation
+- Theme persistence across sessions
+- Restore and permanent delete from Trash
+- Profile stats fallback — fetches counts directly when backend omits stats field
+- `withOpacity` → `withValues(alpha:)` deprecation resolved
+- `flutter analyze` — 0 issues
 
 ### v1.0.0
 - Initial release
