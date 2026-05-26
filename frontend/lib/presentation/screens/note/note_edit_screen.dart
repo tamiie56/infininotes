@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../data/models/note_model.dart';
 import '../../../data/models/label_model.dart';
 import '../../../data/providers/note_provider.dart';
@@ -54,6 +53,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Future<void> _save() async {
     final noteProvider = context.read<NoteProvider>();
+    final navigator = Navigator.of(context);
     final data = {
       'title': _titleController.text.trim(),
       'content': _contentController.text.trim(),
@@ -69,27 +69,46 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     } else {
       await noteProvider.createNote(data);
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) navigator.pop();
   }
 
   void _showColorPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final labelColor = isDark ? Colors.white : Colors.black87;
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (_) => Container(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Note color', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+            Text(
+              'Note color',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: labelColor,
+              ),
+            ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               children: AppConstants.noteColors.map((hex) {
                 final color = ColorUtils.fromHex(hex);
+                final isSelected = _color == hex;
                 return GestureDetector(
                   onTap: () {
-                    setState(() { _color = hex; _hasChanges = true; });
+                    setState(() {
+                      _color = hex;
+                      _hasChanges = true;
+                    });
                     Navigator.pop(context);
                   },
                   child: Container(
@@ -99,15 +118,26 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _color == hex ? Colors.blue : Colors.grey.shade300,
-                        width: _color == hex ? 2 : 1,
+                        color: isSelected
+                            ? const Color(0xFF1A73E8)
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.2)
+                                : Colors.grey.shade300),
+                        width: isSelected ? 2 : 1,
                       ),
                     ),
-                    child: _color == hex ? const Icon(Icons.check, size: 18) : null,
+                    child: isSelected
+                        ? Icon(
+                            Icons.check,
+                            size: 18,
+                            color: ColorUtils.textColorFor(color),
+                          )
+                        : null,
                   ),
                 );
               }).toList(),
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -115,9 +145,17 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   void _showLabelPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetBg = isDark ? const Color(0xFF2D2E30) : Colors.white;
+    final labelColor = isDark ? Colors.white : Colors.black87;
     final labelProvider = context.read<LabelProvider>();
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
           padding: const EdgeInsets.all(16),
@@ -125,19 +163,30 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Labels', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              Text(
+                'Labels',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: labelColor,
+                ),
+              ),
               const SizedBox(height: 8),
               ...labelProvider.labels.map((label) {
-                final isSelected = _selectedLabels.any((l) => l.id == label.id);
+                final isSelected =
+                    _selectedLabels.any((l) => l.id == label.id);
                 return CheckboxListTile(
-                  title: Text(label.name),
+                  title:
+                      Text(label.name, style: TextStyle(color: labelColor)),
                   value: isSelected,
+                  activeColor: const Color(0xFF1A73E8),
                   onChanged: (val) {
                     setModalState(() {
                       if (val == true) {
                         _selectedLabels.add(label);
                       } else {
-                        _selectedLabels.removeWhere((l) => l.id == label.id);
+                        _selectedLabels
+                            .removeWhere((l) => l.id == label.id);
                       }
                     });
                     setState(() => _hasChanges = true);
@@ -154,18 +203,21 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Future<void> _pickReminder() async {
     final date = await showDatePicker(
       context: context,
-      initialDate: _reminder ?? DateTime.now().add(const Duration(hours: 1)),
+      initialDate:
+          _reminder ?? DateTime.now().add(const Duration(hours: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date == null) return;
+    if (!mounted) return;
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_reminder ?? DateTime.now()),
     );
     if (time == null) return;
     setState(() {
-      _reminder = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _reminder = DateTime(
+          date.year, date.month, date.day, time.hour, time.minute);
       _hasChanges = true;
     });
   }
@@ -177,34 +229,59 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     });
   }
 
+  Future<void> _archiveAndPop() async {
+    final noteProvider = context.read<NoteProvider>();
+    final navigator = Navigator.of(context);
+    await noteProvider.archiveNote(widget.note!.id);
+    if (mounted) navigator.pop();
+  }
+
+  Future<void> _trashAndPop() async {
+    final noteProvider = context.read<NoteProvider>();
+    final navigator = Navigator.of(context);
+    await noteProvider.trashNote(widget.note!.id);
+    if (mounted) navigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bgColor = ColorUtils.fromHex(_color);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+    final isWhiteNote = _color == '#ffffff';
+    final bgColor =
+        isDark && isWhiteNote ? scheme.surface : ColorUtils.fromHex(_color);
     final textColor = ColorUtils.textColorFor(bgColor);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: bgColor,
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () {
-            if (_hasChanges) _save();
-            else Navigator.pop(context);
+            if (_hasChanges) {
+              _save();
+            } else {
+              Navigator.pop(context);
+            }
           },
         ),
         actions: [
           IconButton(
-            icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined, color: textColor),
-            onPressed: () => setState(() { _isPinned = !_isPinned; _hasChanges = true; }),
+            icon: Icon(
+              _isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+              color: textColor,
+            ),
+            onPressed: () => setState(() {
+              _isPinned = !_isPinned;
+              _hasChanges = true;
+            }),
           ),
           if (widget.note != null)
             IconButton(
               icon: Icon(Icons.archive_outlined, color: textColor),
-              onPressed: () async {
-                await context.read<NoteProvider>().archiveNote(widget.note!.id);
-                if (mounted) Navigator.pop(context);
-              },
+              onPressed: _archiveAndPop,
             ),
           IconButton(
             icon: Icon(Icons.save_outlined, color: textColor),
@@ -222,10 +299,15 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                 children: [
                   TextField(
                     controller: _titleController,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: textColor),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Title',
-                      hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                      hintStyle: TextStyle(
+                          color: textColor.withValues(alpha: 0.5)),
                       border: InputBorder.none,
                       filled: false,
                     ),
@@ -238,41 +320,69 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         children: [
                           Checkbox(
                             value: item.isChecked,
+                            activeColor: const Color(0xFF1A73E8),
+                            checkColor: Colors.white,
+                            side: BorderSide(
+                              color: textColor.withValues(alpha: 0.5),
+                            ),
                             onChanged: (val) => setState(() {
-                              _checklist[i] = ChecklistItem(text: item.text, isChecked: val ?? false);
+                              _checklist[i] = ChecklistItem(
+                                text: item.text,
+                                isChecked: val ?? false,
+                              );
                               _hasChanges = true;
                             }),
                           ),
                           Expanded(
                             child: TextField(
-                              controller: TextEditingController(text: item.text),
+                              controller:
+                                  TextEditingController(text: item.text),
                               style: TextStyle(
                                 color: textColor,
-                                decoration: item.isChecked ? TextDecoration.lineThrough : null,
+                                decoration: item.isChecked
+                                    ? TextDecoration.lineThrough
+                                    : null,
                               ),
                               decoration: InputDecoration(
                                 hintText: 'List item',
-                                hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                                hintStyle: TextStyle(
+                                    color:
+                                        textColor.withValues(alpha: 0.5)),
                                 border: InputBorder.none,
                                 filled: false,
                               ),
                               onChanged: (val) {
-                                _checklist[i] = ChecklistItem(text: val, isChecked: item.isChecked);
+                                _checklist[i] = ChecklistItem(
+                                  text: val,
+                                  isChecked: item.isChecked,
+                                );
                                 _hasChanges = true;
                               },
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.close, size: 18, color: textColor.withOpacity(0.6)),
-                            onPressed: () => setState(() { _checklist.removeAt(i); _hasChanges = true; }),
+                            icon: Icon(
+                              Icons.close,
+                              size: 18,
+                              color: textColor.withValues(alpha: 0.6),
+                            ),
+                            onPressed: () => setState(() {
+                              _checklist.removeAt(i);
+                              _hasChanges = true;
+                            }),
                           ),
                         ],
                       );
                     }),
                     TextButton.icon(
                       onPressed: _addChecklistItem,
-                      icon: Icon(Icons.add, color: textColor.withOpacity(0.7)),
-                      label: Text('Add item', style: TextStyle(color: textColor.withOpacity(0.7))),
+                      icon: Icon(Icons.add,
+                          color: textColor.withValues(alpha: 0.7)),
+                      label: Text(
+                        'Add item',
+                        style: TextStyle(
+                            color: textColor.withValues(alpha: 0.7)),
+                      ),
                     ),
                   ] else
                     TextField(
@@ -281,7 +391,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       maxLines: null,
                       decoration: InputDecoration(
                         hintText: 'Note',
-                        hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                        hintStyle: TextStyle(
+                            color: textColor.withValues(alpha: 0.5)),
                         border: InputBorder.none,
                         filled: false,
                       ),
@@ -291,24 +402,36 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       onTap: _pickReminder,
                       child: Container(
                         margin: const EdgeInsets.only(top: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.1),
+                          color: textColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.alarm, size: 14, color: textColor.withOpacity(0.7)),
+                            Icon(Icons.alarm,
+                                size: 14,
+                                color: textColor.withValues(alpha: 0.7)),
                             const SizedBox(width: 4),
                             Text(
-                              '${_reminder!.day}/${_reminder!.month}/${_reminder!.year} ${_reminder!.hour}:${_reminder!.minute.toString().padLeft(2, '0')}',
-                              style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7)),
+                              '${_reminder!.day}/${_reminder!.month}/${_reminder!.year} '
+                              '${_reminder!.hour}:${_reminder!.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: textColor.withValues(alpha: 0.7),
+                              ),
                             ),
                             const SizedBox(width: 4),
                             GestureDetector(
-                              onTap: () => setState(() { _reminder = null; _hasChanges = true; }),
-                              child: Icon(Icons.close, size: 14, color: textColor.withOpacity(0.7)),
+                              onTap: () => setState(() {
+                                _reminder = null;
+                                _hasChanges = true;
+                              }),
+                              child: Icon(Icons.close,
+                                  size: 14,
+                                  color: textColor.withValues(alpha: 0.7)),
                             ),
                           ],
                         ),
@@ -319,15 +442,26 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Wrap(
                         spacing: 4,
-                        children: _selectedLabels.map((label) => Chip(
-                          label: Text(label.name, style: TextStyle(fontSize: 12, color: textColor)),
-                          backgroundColor: textColor.withOpacity(0.1),
-                          deleteIcon: Icon(Icons.close, size: 14, color: textColor.withOpacity(0.7)),
-                          onDeleted: () => setState(() {
-                            _selectedLabels.removeWhere((l) => l.id == label.id);
-                            _hasChanges = true;
-                          }),
-                        )).toList(),
+                        children: _selectedLabels
+                            .map((label) => Chip(
+                                  label: Text(
+                                    label.name,
+                                    style: TextStyle(
+                                        fontSize: 12, color: textColor),
+                                  ),
+                                  backgroundColor:
+                                      textColor.withValues(alpha: 0.1),
+                                  deleteIcon: Icon(Icons.close,
+                                      size: 14,
+                                      color:
+                                          textColor.withValues(alpha: 0.7)),
+                                  onDeleted: () => setState(() {
+                                    _selectedLabels.removeWhere(
+                                        (l) => l.id == label.id);
+                                    _hasChanges = true;
+                                  }),
+                                ))
+                            .toList(),
                       ),
                     ),
                 ],
@@ -336,36 +470,42 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           ),
           Container(
             color: bgColor,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.add_box_outlined, color: textColor.withOpacity(0.7)),
-                  onPressed: () => setState(() { _isCheckList = !_isCheckList; _hasChanges = true; }),
+                  icon: Icon(Icons.add_box_outlined,
+                      color: textColor.withValues(alpha: 0.7)),
+                  onPressed: () => setState(() {
+                    _isCheckList = !_isCheckList;
+                    _hasChanges = true;
+                  }),
                   tooltip: 'Toggle checklist',
                 ),
                 IconButton(
-                  icon: Icon(Icons.palette_outlined, color: textColor.withOpacity(0.7)),
+                  icon: Icon(Icons.palette_outlined,
+                      color: textColor.withValues(alpha: 0.7)),
                   onPressed: _showColorPicker,
                   tooltip: 'Change color',
                 ),
                 IconButton(
-                  icon: Icon(Icons.label_outlined, color: textColor.withOpacity(0.7)),
+                  icon: Icon(Icons.label_outlined,
+                      color: textColor.withValues(alpha: 0.7)),
                   onPressed: _showLabelPicker,
                   tooltip: 'Labels',
                 ),
                 IconButton(
-                  icon: Icon(Icons.alarm_add_outlined, color: textColor.withOpacity(0.7)),
+                  icon: Icon(Icons.alarm_add_outlined,
+                      color: textColor.withValues(alpha: 0.7)),
                   onPressed: _pickReminder,
                   tooltip: 'Reminder',
                 ),
                 if (widget.note != null)
                   IconButton(
-                    icon: Icon(Icons.delete_outlined, color: textColor.withOpacity(0.7)),
-                    onPressed: () async {
-                      await context.read<NoteProvider>().trashNote(widget.note!.id);
-                      if (mounted) Navigator.pop(context);
-                    },
+                    icon: Icon(Icons.delete_outlined,
+                        color: textColor.withValues(alpha: 0.7)),
+                    onPressed: _trashAndPop,
                     tooltip: 'Delete',
                   ),
               ],

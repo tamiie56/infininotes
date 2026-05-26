@@ -135,4 +135,30 @@ const trashNote = async (req, res, next) => {
   }
 };
 
-module.exports = { createNote, getNotes, getNoteById, updateNote, deleteNote, pinNote, archiveNote, trashNote };
+const restoreNote = async (req, res, next) => {
+  try {
+    const note = await Note.findOne({ _id: req.params.id, user: req.user._id });
+    if (!note) {
+      return res.status(404).json({ success: false, message: 'Note not found' });
+    }
+    note.isTrashed = false;
+    await note.save();
+    res.status(200).json({ success: true, note });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const permanentDeleteNote = async (req, res, next) => {
+  try {
+    const note = await Note.findOneAndDelete({ _id: req.params.id, user: req.user._id, isTrashed: true });
+    if (!note) {
+      return res.status(404).json({ success: false, message: 'Note not found' });
+    }
+    res.status(200).json({ success: true, message: 'Note permanently deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { createNote, getNotes, getNoteById, updateNote, deleteNote, pinNote, archiveNote, trashNote, restoreNote, permanentDeleteNote };

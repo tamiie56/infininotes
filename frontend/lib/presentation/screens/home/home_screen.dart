@@ -48,6 +48,49 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) => _refresh());
   }
 
+  void _openNoteOrShowOptions(NoteModel note) {
+    if (_selectedIndex == 2) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final sheetBg = isDark ? const Color(0xFF2D2E30) : Colors.white;
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: sheetBg,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (_) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.restore),
+              title: const Text('Restore'),
+              onTap: () async {
+                Navigator.pop(context);
+                await context.read<NoteProvider>().restoreNote(note.id);
+                await _refresh();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_forever, color: Colors.red),
+              title: const Text(
+                'Delete permanently',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                await context.read<NoteProvider>().permanentDeleteNote(note.id);
+                await _refresh();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      );
+    } else {
+      _openNote(note);
+    }
+  }
+
   Future<void> _logout() async {
     await context.read<AuthProvider>().logout();
     if (mounted) {
@@ -74,6 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final noteProvider = context.watch<NoteProvider>();
     final labelProvider = context.watch<LabelProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return Scaffold(
       appBar: _isSearching
@@ -104,17 +148,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 PopupMenuButton(
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'labels', child: Text('Edit labels')),
+                    const PopupMenuItem(
+                      value: 'labels',
+                      child: Text('Edit labels'),
+                    ),
                     PopupMenuItem(
                       value: 'theme',
                       child: Row(
                         children: [
                           Icon(
-                            context.read<ThemeProvider>().isDark ? Icons.light_mode : Icons.dark_mode,
+                            themeProvider.isDark
+                                ? Icons.light_mode
+                                : Icons.dark_mode,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
-                          Text(context.read<ThemeProvider>().isDark ? 'Light mode' : 'Dark mode'),
+                          Text(
+                            themeProvider.isDark ? 'Light mode' : 'Dark mode',
+                          ),
                         ],
                       ),
                     ),
@@ -122,7 +173,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   onSelected: (value) {
                     if (value == 'labels') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LabelScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LabelScreen()),
+                      );
                     } else if (value == 'theme') {
                       context.read<ThemeProvider>().toggleTheme();
                     } else if (value == 'logout') {
@@ -140,44 +194,48 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(color: Color(0xFF1A73E8)),
               child: Text(
                 '∆nfiniNotes',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.lightbulb_outlined),
-              title: const Text('Notes'),
+            _DrawerItem(
+              icon: Icons.lightbulb_outlined,
+              label: 'Notes',
               selected: _selectedIndex == 0 && _selectedLabel == null,
-              selectedTileColor: const Color(0xFF1A73E8).withOpacity(0.15),
-              selectedColor: const Color(0xFF1A73E8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               onTap: () {
-                setState(() { _selectedIndex = 0; _selectedLabel = null; });
+                setState(() {
+                  _selectedIndex = 0;
+                  _selectedLabel = null;
+                });
                 context.read<NoteProvider>().fetchNotes();
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.archive_outlined),
-              title: const Text('Archive'),
+            _DrawerItem(
+              icon: Icons.archive_outlined,
+              label: 'Archive',
               selected: _selectedIndex == 1,
-              selectedTileColor: const Color(0xFF1A73E8).withOpacity(0.15),
-              selectedColor: const Color(0xFF1A73E8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               onTap: () {
-                setState(() { _selectedIndex = 1; _selectedLabel = null; });
+                setState(() {
+                  _selectedIndex = 1;
+                  _selectedLabel = null;
+                });
                 context.read<NoteProvider>().fetchNotes(archived: true);
                 Navigator.pop(context);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outlined),
-              title: const Text('Trash'),
+            _DrawerItem(
+              icon: Icons.delete_outlined,
+              label: 'Trash',
               selected: _selectedIndex == 2,
-              selectedTileColor: const Color(0xFF1A73E8).withOpacity(0.15),
-              selectedColor: const Color(0xFF1A73E8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
               onTap: () {
-                setState(() { _selectedIndex = 2; _selectedLabel = null; });
+                setState(() {
+                  _selectedIndex = 2;
+                  _selectedLabel = null;
+                });
                 context.read<NoteProvider>().fetchNotes(trashed: true);
                 Navigator.pop(context);
               },
@@ -186,21 +244,26 @@ class _HomeScreenState extends State<HomeScreen> {
               const Divider(),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Labels', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                child: Text(
+                  'Labels',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ),
-              ...labelProvider.labels.map((label) => ListTile(
-                leading: const Icon(Icons.label_outlined),
-                title: Text(label.name),
-                selected: _selectedLabel == label.id,
-                selectedTileColor: const Color(0xFF1A73E8).withOpacity(0.15),
-                selectedColor: const Color(0xFF1A73E8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                onTap: () {
-                  setState(() { _selectedIndex = 0; _selectedLabel = label.id; });
-                  context.read<NoteProvider>().fetchNotes(label: label.id);
-                  Navigator.pop(context);
-                },
-              )),
+              ...labelProvider.labels.map(
+                (label) => _DrawerItem(
+                  icon: Icons.label_outlined,
+                  label: label.name,
+                  selected: _selectedLabel == label.id,
+                  onTap: () {
+                    setState(() {
+                      _selectedIndex = 0;
+                      _selectedLabel = label.id;
+                    });
+                    context.read<NoteProvider>().fetchNotes(label: label.id);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
             ],
           ],
         ),
@@ -212,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: const Color(0xFF1A73E8).withOpacity(0.1),
+              color: const Color(0xFF1A73E8).withValues(alpha: 0.1),
               child: Text(
                 _currentSectionTitle,
                 style: const TextStyle(
@@ -228,26 +291,44 @@ class _HomeScreenState extends State<HomeScreen> {
               child: noteProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : noteProvider.notes.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.lightbulb_outlined, size: 80, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text('No notes yet', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _selectedIndex == 2
+                                ? Icons.delete_outlined
+                                : Icons.lightbulb_outlined,
+                            size: 80,
+                            color: Colors.grey,
                           ),
-                        )
-                      : _buildNotesList(noteProvider),
+                          const SizedBox(height: 16),
+                          Text(
+                            _selectedIndex == 2
+                                ? 'Trash is empty'
+                                : _selectedIndex == 1
+                                ? 'No archived notes'
+                                : 'No notes yet',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildNotesList(noteProvider),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openNote(),
-        backgroundColor: const Color(0xFF1A73E8),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: _selectedIndex == 2
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _openNote(),
+              backgroundColor: const Color(0xFF1A73E8),
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
     );
   }
 
@@ -262,25 +343,45 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text('Pinned', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                child: Text(
+                  'Pinned',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               sliver: SliverGrid(
                 delegate: SliverChildBuilderDelegate(
-                  (_, i) => NoteCard(note: pinned[i], onTap: () => _openNote(pinned[i])),
+                  (_, i) => NoteCard(
+                    note: pinned[i],
+                    onTap: () => _openNoteOrShowOptions(pinned[i]),
+                  ),
                   childCount: pinned.length,
                 ),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, crossAxisSpacing: 4, mainAxisSpacing: 4, childAspectRatio: 0.85,
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 4,
+                  mainAxisSpacing: 4,
+                  childAspectRatio: 0.85,
                 ),
               ),
             ),
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Text('Others', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                child: Text(
+                  'Others',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
               ),
             ),
           ],
@@ -288,11 +389,17 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                (_, i) => NoteCard(note: others[i], onTap: () => _openNote(others[i])),
+                (_, i) => NoteCard(
+                  note: others[i],
+                  onTap: () => _openNoteOrShowOptions(others[i]),
+                ),
                 childCount: others.length,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, crossAxisSpacing: 4, mainAxisSpacing: 4, childAspectRatio: 0.85,
+                crossAxisCount: 2,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+                childAspectRatio: 0.85,
               ),
             ),
           ),
@@ -305,16 +412,69 @@ class _HomeScreenState extends State<HomeScreen> {
         if (pinned.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Pinned', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+            child: Text(
+              'Pinned',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
           ),
-          ...pinned.map((n) => NoteCard(note: n, onTap: () => _openNote(n), isListView: true)),
+          ...pinned.map(
+            (n) => NoteCard(
+              note: n,
+              onTap: () => _openNoteOrShowOptions(n),
+              isListView: true,
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text('Others', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+            child: Text(
+              'Others',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
           ),
         ],
-        ...others.map((n) => NoteCard(note: n, onTap: () => _openNote(n), isListView: true)),
+        ...others.map(
+          (n) => NoteCard(
+            note: n,
+            onTap: () => _openNoteOrShowOptions(n),
+            isListView: true,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      selected: selected,
+      selectedTileColor: const Color(0xFF1A73E8).withValues(alpha: 0.15),
+      selectedColor: const Color(0xFF1A73E8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      onTap: onTap,
     );
   }
 }

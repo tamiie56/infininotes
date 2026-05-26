@@ -16,14 +16,25 @@ class NoteProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
 
   List<NoteModel> get pinnedNotes => _notes.where((n) => n.isPinned).toList();
-  List<NoteModel> get unpinnedNotes => _notes.where((n) => !n.isPinned).toList();
+  List<NoteModel> get unpinnedNotes =>
+      _notes.where((n) => !n.isPinned).toList();
 
-  Future<void> fetchNotes({String? search, String? label, bool archived = false, bool trashed = false}) async {
+  Future<void> fetchNotes({
+    String? search,
+    String? label,
+    bool archived = false,
+    bool trashed = false,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
     try {
-      _notes = await _noteService.getNotes(search: search, label: label, archived: archived, trashed: trashed);
+      _notes = await _noteService.getNotes(
+        search: search,
+        label: label,
+        archived: archived,
+        trashed: trashed,
+      );
     } catch (e) {
       _error = e.toString();
     }
@@ -94,6 +105,18 @@ class NoteProvider extends ChangeNotifier {
 
   Future<void> trashNote(String id) async {
     await _noteService.trashNote(id);
+    _notes.removeWhere((n) => n.id == id);
+    notifyListeners();
+  }
+
+  Future<void> restoreNote(String id) async {
+    await _noteService.restoreNote(id);
+    _notes.removeWhere((n) => n.id == id);
+    notifyListeners();
+  }
+
+  Future<void> permanentDeleteNote(String id) async {
+    await _noteService.permanentDeleteNote(id);
     _notes.removeWhere((n) => n.id == id);
     notifyListeners();
   }

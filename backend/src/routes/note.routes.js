@@ -8,6 +8,8 @@ const {
   pinNote,
   archiveNote,
   trashNote,
+  restoreNote,
+  permanentDeleteNote,
 } = require('../controllers/note.controller');
 const { protect } = require('../middleware/auth.middleware');
 
@@ -23,5 +25,7 @@ router.delete('/:id', deleteNote);
 router.patch('/:id/pin', pinNote);
 router.patch('/:id/archive', archiveNote);
 router.patch('/:id/trash', trashNote);
+router.patch('/:id/restore', restoreNote);
+router.delete('/:id/permanent', permanentDeleteNote);
 
 module.exports = router;

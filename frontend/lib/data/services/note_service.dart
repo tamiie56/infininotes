@@ -5,7 +5,12 @@ import 'api_service.dart';
 class NoteService {
   final ApiService _api = ApiService();
 
-  Future<List<NoteModel>> getNotes({String? search, String? label, bool archived = false, bool trashed = false}) async {
+  Future<List<NoteModel>> getNotes({
+    String? search,
+    String? label,
+    bool archived = false,
+    bool trashed = false,
+  }) async {
     String url = ApiConstants.notes;
     final params = <String, String>{};
     if (search != null && search.isNotEmpty) params['search'] = search;
@@ -17,7 +22,9 @@ class NoteService {
     }
     final response = await _api.get(url);
     if (response['success'] == true) {
-      return (response['notes'] as List).map((e) => NoteModel.fromJson(e)).toList();
+      return (response['notes'] as List)
+          .map((e) => NoteModel.fromJson(e))
+          .toList();
     }
     return [];
   }
@@ -40,6 +47,16 @@ class NoteService {
 
   Future<bool> deleteNote(String id) async {
     final response = await _api.delete('${ApiConstants.notes}/$id');
+    return response['success'] == true;
+  }
+
+  Future<bool> restoreNote(String id) async {
+    final response = await _api.patch('${ApiConstants.notes}/$id/restore');
+    return response['success'] == true;
+  }
+
+  Future<bool> permanentDeleteNote(String id) async {
+    final response = await _api.delete('${ApiConstants.notes}/$id/permanent');
     return response['success'] == true;
   }
 

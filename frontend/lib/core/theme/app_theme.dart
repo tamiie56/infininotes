@@ -35,7 +35,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.grey.shade100,
+      fillColor: const Color(0xFFF1F3F4),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -57,6 +57,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
     ),
+    dividerColor: const Color(0xFFE0E0E0),
   );
 
   static ThemeData darkTheme = ThemeData(
@@ -107,5 +108,6 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
     ),
+    dividerColor: const Color(0xFF5F6368),
   );
 }
