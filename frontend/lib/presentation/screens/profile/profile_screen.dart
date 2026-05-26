@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/providers/theme_provider.dart';
 import '../../../data/services/auth_service.dart';
+import '../../../data/services/note_service.dart';
 import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -14,8 +16,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
-  Map<String, dynamic>? _stats;
+  int _totalNotes = 0;
+  int _archivedNotes = 0;
+  int _trashedNotes = 0;
   bool _isLoading = true;
+  bool _statsLoaded = false;
 
   @override
   void initState() {
@@ -27,15 +32,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await AuthService().getMe();
+      if (kDebugMode) {
+        debugPrint('[ProfileScreen] getMe response: $response');
+      }
       if (response['success'] == true) {
+        final stats = response['stats'];
+        if (kDebugMode) {
+          debugPrint('[ProfileScreen] stats field: $stats');
+        }
         setState(() {
           _userData = response['user'];
-          _stats = response['stats'];
-          _isLoading = false;
+          if (stats != null) {
+            _totalNotes = (stats['totalNotes'] ?? stats['notes'] ?? 0) as int;
+            _archivedNotes =
+                (stats['archivedNotes'] ?? stats['archived'] ?? 0) as int;
+            _trashedNotes =
+                (stats['trashedNotes'] ?? stats['trashed'] ?? stats['trash'] ??
+                    0) as int;
+            _statsLoaded = true;
+          }
+        });
+        if (!_statsLoaded) {
+          await _fetchStatsFallback();
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ProfileScreen] error: $e');
+      }
+      await _fetchStatsFallback();
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchStatsFallback() async {
+    try {
+      final noteService = NoteService();
+      final results = await Future.wait([
+        noteService.getNotes(),
+        noteService.getNotes(archived: true),
+        noteService.getNotes(trashed: true),
+      ]);
+      if (mounted) {
+        setState(() {
+          _totalNotes = results[0].length;
+          _archivedNotes = results[1].length;
+          _trashedNotes = results[2].length;
+          _statsLoaded = true;
         });
       }
-    } catch (_) {
-      setState(() => _isLoading = false);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ProfileScreen] stats fallback error: $e');
+      }
     }
   }
 
@@ -87,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildAvatarSection(isDark),
                     const SizedBox(height: 24),
-                    if (_stats != null) _buildStatsSection(isDark),
+                    _buildStatsSection(isDark),
                     const SizedBox(height: 24),
                     _buildSettingsSection(isDark, scheme, themeProvider),
                     const SizedBox(height: 24),
@@ -182,10 +233,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsSection(bool isDark) {
-    final total = _stats?['totalNotes'] ?? 0;
-    final archived = _stats?['archivedNotes'] ?? 0;
-    final trashed = _stats?['trashedNotes'] ?? 0;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -207,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _StatCard(
                 icon: Icons.note_alt_outlined,
                 label: 'Notes',
-                value: total.toString(),
+                value: _totalNotes.toString(),
                 color: const Color(0xFF1A73E8),
                 isDark: isDark,
               ),
@@ -217,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _StatCard(
                 icon: Icons.archive_outlined,
                 label: 'Archived',
-                value: archived.toString(),
+                value: _archivedNotes.toString(),
                 color: const Color(0xFF34A853),
                 isDark: isDark,
               ),
@@ -227,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: _StatCard(
                 icon: Icons.delete_outlined,
                 label: 'Trash',
-                value: trashed.toString(),
+                value: _trashedNotes.toString(),
                 color: const Color(0xFFEA4335),
                 isDark: isDark,
               ),
