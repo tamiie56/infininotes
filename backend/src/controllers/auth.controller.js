@@ -130,7 +130,29 @@ const logout = async (req, res) => {
 };
 
 const getMe = async (req, res) => {
-  res.status(200).json({ success: true, user: req.user });
+  try {
+    const Note = require('../models/note.model');
+    const userId = req.user._id;
+
+    const [totalNotes, archivedNotes, trashedNotes] = await Promise.all([
+      Note.countDocuments({ user: userId, isArchived: false, isTrashed: false }),
+      Note.countDocuments({ user: userId, isArchived: true, isTrashed: false }),
+      Note.countDocuments({ user: userId, isTrashed: true }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      user: req.user,
+      stats: {
+        totalNotes,
+        archivedNotes,
+        trashedNotes,
+      },
+    });
+  } catch (error) {
+    console.error('GetMe error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
 module.exports = { register, login, googleAuth, refreshToken, logout, getMe };

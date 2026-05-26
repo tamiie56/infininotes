@@ -9,6 +9,7 @@ import '../../widgets/search_bar_widget.dart';
 import '../note/note_edit_screen.dart';
 import '../label/label_screen.dart';
 import '../auth/login_screen.dart';
+import '../profile/profile_screen.dart';
 import '../../../data/providers/theme_provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -328,6 +329,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           .read<NoteProvider>()
                           .fetchNotes(trashed: true);
                       Navigator.pop(context);
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.person_outlined,
+                    label: 'Profile',
+                    selected: false,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const ProfileScreen()),
+                      );
                     },
                   ),
                   if (labelProvider.labels.isNotEmpty) ...[

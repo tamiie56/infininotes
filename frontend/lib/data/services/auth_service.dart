@@ -37,6 +37,10 @@ class AuthService {
     return await _api.post('${ApiConstants.auth}/google', {'idToken': idToken});
   }
 
+  Future<Map<String, dynamic>> getMe() async {
+    return await _api.get('${ApiConstants.auth}/me');
+  }
+
   Future<void> saveTokens(String accessToken, String refreshToken) async {
     await _storage.write(key: AppConstants.tokenKey, value: accessToken);
     await _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
