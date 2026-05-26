@@ -9,6 +9,7 @@ class NoteCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isListView;
   final VoidCallback? onRefresh;
+  final bool isTrashed;
 
   const NoteCard({
     super.key,
@@ -16,6 +17,7 @@ class NoteCard extends StatelessWidget {
     required this.onTap,
     this.isListView = false,
     this.onRefresh,
+    this.isTrashed = false,
   });
 
   String _formatReminder(DateTime dt) {
@@ -37,7 +39,7 @@ class NoteCard extends StatelessWidget {
       context: context,
       backgroundColor: sheetBg,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -80,7 +82,7 @@ class NoteCard extends StatelessWidget {
               onRefresh?.call();
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -101,7 +103,9 @@ class NoteCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      onLongPress: () => _showContextMenu(context, bgColor, textColor),
+      onLongPress: isTrashed
+          ? null
+          : () => _showContextMenu(context, bgColor, textColor),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         margin: const EdgeInsets.all(4),
@@ -254,7 +258,8 @@ class NoteCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1A73E8).withValues(alpha: 0.12),
+                            color: const Color(0xFF1A73E8)
+                                .withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -287,10 +292,12 @@ class NoteCard extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: textColor.withValues(alpha: 0.08),
+                                    color:
+                                        textColor.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: textColor.withValues(alpha: 0.12),
+                                      color:
+                                          textColor.withValues(alpha: 0.12),
                                       width: 0.5,
                                     ),
                                   ),
@@ -298,7 +305,8 @@ class NoteCard extends StatelessWidget {
                                     label.name,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: textColor.withValues(alpha: 0.7),
+                                      color:
+                                          textColor.withValues(alpha: 0.7),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
